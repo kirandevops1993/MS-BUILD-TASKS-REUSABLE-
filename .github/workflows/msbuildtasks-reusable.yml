@@ -35,7 +35,7 @@ jobs:
             Write-Output "SOLUTION_PATH=$solution" | Out-File -FilePath $env:GITHUB_ENV -Append
             echo "Solution file found: $solution"
           } else { 
-            echo "❌ No solution file found!" 
+            echo " No solution file found!" 
             exit 1 
           }
         shell: pwsh
