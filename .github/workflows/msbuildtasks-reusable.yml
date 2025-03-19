@@ -9,18 +9,10 @@ on:
       configuration:
         required: true
         type: string
-      clean:
-        required: false
-        default: false
-        type: boolean
       maxCpu:
         required: false
         default: 4
         type: number
-      msBuildArgs:
-        required: false
-        default: ""
-        type: string
 
 jobs:
   build:
@@ -33,17 +25,23 @@ jobs:
           fetch-depth: 0
 
       - name: Locate Solution File
-        run: dir /s /b *.sln
+        id: find_sln
+        run: |
+          $solution = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
+          if ($solution) { 
+            Write-Output "SOLUTION_PATH=$solution" | Out-File -FilePath $env:GITHUB_ENV -Append
+            echo "Solution file found: $solution"
+          } else { 
+            echo "❌ No solution file found!" 
+            exit 1 
+          }
+        shell: pwsh
 
       - name: Restore NuGet Packages
-        run: |
-          $solution = Get-ChildItem -Recurse -Filter *.sln | Select-Object -ExpandProperty FullName
-          if ($solution) { nuget restore "$solution" } else { Write-Host "No solution file found!" ; exit 1 }
-        shell: pwsh
+        run: nuget restore "%SOLUTION_PATH%"
+        shell: cmd
 
       - name: Build Solution with MSBuild
         run: |
-          msbuild **/*.sln /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} `
-          ${{ inputs.msBuildArgs }} `
-          ${{ inputs.clean && '/t:Clean' || '' }} `
-          /m:${{ inputs.maxCpu }}
+          msbuild "%SOLUTION_PATH%" /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}
+        shell: cmd
