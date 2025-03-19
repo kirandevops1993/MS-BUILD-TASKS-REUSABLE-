@@ -24,6 +24,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
       - name: Locate Solution File
         id: find_sln
         run: |
@@ -42,13 +45,5 @@ jobs:
         shell: cmd
 
       - name: Build Solution with MSBuild
-        run: |
-          msbuild "%SOLUTION_PATH%" /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}
+        run: msbuild "%SOLUTION_PATH%" /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}
         shell: cmd
-
-        
-
-
-
-
-
