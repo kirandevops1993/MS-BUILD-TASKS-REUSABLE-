@@ -15,6 +15,22 @@ on:
         required: false
         type: number
         default: 8
+      clean:
+        required: false
+        type: boolean
+        default: false
+      msbuildArguments:
+        required: false
+        type: string
+        default: ""
+      createLogFile:
+        required: false
+        type: boolean
+        default: false
+      logFileVerbosity:
+        required: false
+        type: string
+        default: "minimal"
 
 jobs:
   build:
@@ -32,11 +48,12 @@ jobs:
       - name: Locate Solution File
         id: find_sln
         run: |
-          $solution = Get-ChildItem -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
+          $solution = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName -First 1
           if ($solution) {
-            echo "SOLUTION_PATH=$solution" >> $env:GITHUB_ENV
+            Write-Output "SOLUTION_PATH=$solution" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "Solution file found: $solution"
           } else {
-            Write-Error "No solution file found!"
+            Write-Host "No solution file found!"
             exit 1
           }
         shell: pwsh
@@ -46,5 +63,22 @@ jobs:
         shell: pwsh
 
       - name: Build Solution with MSBuild
-        run: msbuild "$env:SOLUTION_PATH" /p:Platform="${{ inputs.platform }}" /p:Configuration="${{ inputs.configuration }}" /m:${{ inputs.maxCpu }}
-        shell: cmd
+        run: |
+          $msbuildCmd = "msbuild `"$env:SOLUTION_PATH`" /p:Platform=`"${{ inputs.platform }}`" /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}"
+
+          if (${{ inputs.clean }}) {
+            $msbuildCmd += " /t:Clean"
+          }
+
+          if (-not [string]::IsNullOrEmpty("${{ inputs.msbuildArguments }}")) {
+            $msbuildCmd += " ${{ inputs.msbuildArguments }}"
+          }
+
+          if (${{ inputs.createLogFile }}) {
+            $logFile = "msbuild.log"
+            $msbuildCmd += " /fileLogger /fileLoggerParameters:LogFile=$logFile;Verbosity=${{ inputs.logFileVerbosity }}"
+          }
+
+          Write-Host "Executing: $msbuildCmd"
+          Invoke-Expression $msbuildCmd
+        shell: pwsh
