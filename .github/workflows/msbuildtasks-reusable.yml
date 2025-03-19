@@ -1,47 +1,45 @@
-
 name: MSBuild Reusable Workflow
 
 on:
   workflow_call:
     inputs:
       platform:
-        description: "Build Platform (e.g., Any CPU, x64, x86)"
         required: true
         type: string
       configuration:
-        description: "Build Configuration (Debug or Release)"
         required: true
         type: string
       clean:
-        description: "Whether to clean before building"
         required: false
         default: false
         type: boolean
       maxCpu:
-        description: "Maximum CPU count for parallel builds"
         required: false
         default: 4
         type: number
       msBuildArgs:
-        description: "Additional MSBuild Arguments"
         required: false
         default: ""
         type: string
 
 jobs:
   build:
-    name: Build with MSBuild
-    runs-on: windows-latest  # Use a Windows runner
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1
+      - name: Locate Solution File
+        run: dir /s /b *.sln
 
       - name: Restore NuGet Packages
-        run: nuget restore **/*.sln
+        run: |
+          $solution = Get-ChildItem -Recurse -Filter *.sln | Select-Object -ExpandProperty FullName
+          if ($solution) { nuget restore "$solution" } else { Write-Host "No solution file found!" ; exit 1 }
+        shell: pwsh
 
       - name: Build Solution with MSBuild
         run: |
