@@ -29,19 +29,24 @@ jobs:
         run: |
           $solution = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
           if ($solution) { 
-            Write-Output "SOLUTION_PATH=$solution" | Out-File -FilePath $env:GITHUB_ENV -Append
-            echo "Solution file found: $solution"
+            echo "SOLUTION_PATH=$solution" >> $env:GITHUB_ENV
+            echo "✅ Solution file found: $solution"
           } else { 
-            echo "❌ No solution file found!" 
-            exit 1 
+            echo "❌ No solution file found!"
+            exit 1
           }
         shell: pwsh
 
       - name: Restore NuGet Packages
-        run: nuget restore "%SOLUTION_PATH%"
+        run: nuget restore "$env:SOLUTION_PATH"
         shell: cmd
+
+      - name: Setup MSBuild Path
+        run: |
+          echo "Setting up MSBuild environment..."
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
+        shell: pwsh
 
       - name: Build Solution with MSBuild
         run: |
-          msbuild "%SOLUTION_PATH%" /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}
-        shell: cmd
+ 
