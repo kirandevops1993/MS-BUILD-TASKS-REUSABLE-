@@ -1,0 +1,51 @@
+
+name: MSBuild Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "Build Platform (e.g., Any CPU, x64, x86)"
+        required: true
+        type: string
+      configuration:
+        description: "Build Configuration (Debug or Release)"
+        required: true
+        type: string
+      clean:
+        description: "Whether to clean before building"
+        required: false
+        default: false
+        type: boolean
+      maxCpu:
+        description: "Maximum CPU count for parallel builds"
+        required: false
+        default: 4
+        type: number
+      msBuildArgs:
+        description: "Additional MSBuild Arguments"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  build:
+    name: Build with MSBuild
+    runs-on: windows-latest  # Use a Windows runner
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
+
+      - name: Restore NuGet Packages
+        run: nuget restore **/*.sln
+
+      - name: Build Solution with MSBuild
+        run: |
+          msbuild **/*.sln /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} `
+          ${{ inputs.msBuildArgs }} `
+          ${{ inputs.clean && '/t:Clean' || '' }} `
+          /m:${{ inputs.maxCpu }}
