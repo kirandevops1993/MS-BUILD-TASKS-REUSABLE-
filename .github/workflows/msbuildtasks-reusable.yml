@@ -13,8 +13,8 @@ on:
         default: "Release"
       maxCpu:
         required: false
-        default: 8
         type: number
+        default: 8
 
 jobs:
   build:
@@ -32,21 +32,19 @@ jobs:
       - name: Locate Solution File
         id: find_sln
         run: |
-          $solution = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
-          if ($solution) { 
-            Write-Output "SOLUTION_PATH=$solution" | Out-File -FilePath $env:GITHUB_ENV -Append
-            echo "Solution file found: $solution"
-          } else { 
-            echo "No solution file found!" 
-            exit 1 
+          $solution = Get-ChildItem -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
+          if ($solution) {
+            echo "SOLUTION_PATH=$solution" >> $env:GITHUB_ENV
+          } else {
+            Write-Error "No solution file found!"
+            exit 1
           }
         shell: pwsh
 
       - name: Restore NuGet Packages
-        run: nuget restore "%SOLUTION_PATH%"
-        shell: cmd
+        run: nuget restore "$env:SOLUTION_PATH"
+        shell: pwsh
 
       - name: Build Solution with MSBuild
-        run: |
-          msbuild "%SOLUTION_PATH%" /p:Platform="${{ inputs.platform }}" /p:Configuration=${{ inputs.configuration }} /m:${{ inputs.maxCpu }}
+        run: msbuild "$env:SOLUTION_PATH" /p:Platform="${{ inputs.platform }}" /p:Configuration="${{ inputs.configuration }}" /m:${{ inputs.maxCpu }}
         shell: cmd
