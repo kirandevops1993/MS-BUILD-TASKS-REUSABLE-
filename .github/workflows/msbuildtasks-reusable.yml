@@ -16,9 +16,9 @@ on:
         type: number
         default: 8
       clean:
-        required: false
+        required: true
         type: boolean
-        default: false
+        default: true
       msbuildArguments:
         required: false
         type: string
@@ -30,7 +30,7 @@ on:
       logFileVerbosity:
         required: false
         type: string
-        default: "minimal"
+        default: "detailed"
 
 jobs:
   build:
